@@ -323,14 +323,21 @@ export function SalesTable({ sales, onDelete, onUpdateShippingCost, onUpdateCogs
                             <span>Enter $</span>
                           </button>
                         ) : (
-                          <button
-                            type="button"
-                            onClick={() => setEditingShippingSale(sale)}
-                            className="text-red-600 hover:underline cursor-pointer text-right font-medium"
-                            title="Click to edit shipping cost"
-                          >
-                            -${sale.actualShippingCostBySeller.toFixed(2)}
-                          </button>
+                          <div className="flex flex-col items-end">
+                            <button
+                              type="button"
+                              onClick={() => setEditingShippingSale(sale)}
+                              className="text-red-600 hover:underline cursor-pointer text-right font-medium"
+                              title="Click to edit shipping cost"
+                            >
+                              -${sale.actualShippingCostBySeller.toFixed(2)}
+                            </button>
+                            {sale.stallionTrackingNumber && (
+                              <span className="text-[10px] text-muted-foreground truncate max-w-[110px]" title={`Tracking: ${sale.stallionTrackingNumber}`}>
+                                {sale.stallionTrackingNumber}
+                              </span>
+                            )}
+                          </div>
                         )}
                       </TableCell>
                       {/* COGS CELL: Synchronized with linked inventory item */}

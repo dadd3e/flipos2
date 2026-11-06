@@ -10,7 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { 
   ListChecks, Palette, ShieldCheck, SlidersHorizontal, Edit3, Trash2, PlusCircle, LayoutDashboard, 
   Layers, Upload, Download, FileText, FileQuestion, UserCircle, Settings as SettingsIconLucide, Database, Brush, BellRing, ChevronDown,
-  Store, ExternalLink, RefreshCw, CheckCircle2, AlertCircle, LogIn, Copy, Check, Search, AlertTriangle, Loader2
+  Store, ExternalLink, RefreshCw, CheckCircle2, AlertCircle, LogIn, Copy, Check, Search, AlertTriangle, Loader2, Truck
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -25,7 +25,7 @@ import {
     RESELLER_CATEGORIES_KEY, DEFAULT_CATEGORIES, APP_THEME_KEY, AVAILABLE_THEMES, DEFAULT_THEME,
     RESELLER_INVENTORY_KEY, RESELLER_SUPPLIERS_KEY, DEFAULT_SUPPLIERS,
     RESELLER_PROFILE_BUSINESS_NAME_KEY, RESELLER_PROFILE_EMAIL_KEY, DEFAULT_BUSINESS_NAME, DEFAULT_EMAIL,
-    RESELLER_ETSY_CONFIG_KEY
+    RESELLER_ETSY_CONFIG_KEY, RESELLER_STALLION_CONFIG_KEY
 } from "@/lib/constants";
 import type { DashboardCardKey, DashboardSettings, AppTheme, InventoryItem, Supplier, EtsyConfig } from "@/lib/types";
 import { useState, useEffect, useRef, useCallback } from 'react';
@@ -87,6 +87,10 @@ export function SettingsContent() {
   const [copiedCallback, setCopiedCallback] = useState(false);
   const [redirectUri, setRedirectUri] = useState('');
 
+  const [stallionToken, setStallionToken] = useState('');
+  const [isTestingStallion, setIsTestingStallion] = useState(false);
+  const [isStallionConnected, setIsStallionConnected] = useState(false);
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
       setRedirectUri(`${window.location.origin}/api/etsy/oauth/callback`);
@@ -136,6 +140,19 @@ export function SettingsContent() {
         }
       } catch (e) {
         console.error("Failed to parse Etsy config", e);
+      }
+    }
+
+    const storedStallion = localStorage.getItem(RESELLER_STALLION_CONFIG_KEY);
+    if (storedStallion) {
+      try {
+        const parsed = JSON.parse(storedStallion);
+        if (parsed && typeof parsed.token === 'string') {
+          setStallionToken(parsed.token);
+          setIsStallionConnected(!!parsed.isConnected);
+        }
+      } catch (e) {
+        console.error("Failed to parse Stallion config", e);
       }
     }
 
@@ -202,6 +219,59 @@ export function SettingsContent() {
     window.dispatchEvent(new StorageEvent('storage', { key: RESELLER_ETSY_CONFIG_KEY, newValue: JSON.stringify(toSave), storageArea: localStorage }));
     toast({ title: "Etsy Settings Saved", description: "Your Etsy credentials have been updated." });
   }, [etsyConfig, toast]);
+
+  const handleSaveStallionToken = useCallback((newToken: string) => {
+    setStallionToken(newToken);
+    const data = { token: newToken, isConnected: isStallionConnected };
+    localStorage.setItem(RESELLER_STALLION_CONFIG_KEY, JSON.stringify(data));
+    window.dispatchEvent(new StorageEvent('storage', { key: RESELLER_STALLION_CONFIG_KEY, newValue: JSON.stringify(data), storageArea: localStorage }));
+  }, [isStallionConnected]);
+
+  const handleTestStallionConnection = useCallback(async () => {
+    if (!stallionToken.trim()) {
+      toast({
+        title: "Token Required",
+        description: "Please enter your Stallion Express API Token first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsTestingStallion(true);
+    try {
+      const res = await fetch("/api/stallion/shipments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: stallionToken.trim(), testOnly: true }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to connect to Stallion Express API.");
+      }
+      setIsStallionConnected(true);
+      const updated = { token: stallionToken.trim(), isConnected: true };
+      localStorage.setItem(RESELLER_STALLION_CONFIG_KEY, JSON.stringify(updated));
+      window.dispatchEvent(
+        new StorageEvent("storage", {
+          key: RESELLER_STALLION_CONFIG_KEY,
+          newValue: JSON.stringify(updated),
+          storageArea: localStorage,
+        })
+      );
+      toast({
+        title: "Stallion Express Connected!",
+        description: "API token verified successfully.",
+      });
+    } catch (err: any) {
+      toast({
+        title: "Stallion Connection Failed",
+        description: err.message || "Could not verify Stallion Express API token.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsTestingStallion(false);
+    }
+  }, [stallionToken, toast]);
 
   // Listen for OAuth message from the Etsy popup window, BroadcastChannel, or storage
   useEffect(() => {
@@ -863,6 +933,62 @@ export function SettingsContent() {
                   </Button>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Stallion Express Shipping Integration Card */}
+          <Card>
+            <CardHeader>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Truck className="h-6 w-6 text-blue-600" />
+                    Stallion Express Shipping Integration
+                  </CardTitle>
+                  <CardDescription>
+                    Connect your Stallion Express account to automatically sync shipping postage costs and tracking numbers.
+                  </CardDescription>
+                </div>
+                {isStallionConnected && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200 w-fit">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-blue-600" /> Configured
+                  </span>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="stallion-api-token" className="font-semibold text-sm">
+                  Stallion Express API Token
+                </Label>
+                <Input
+                  id="stallion-api-token"
+                  type="password"
+                  placeholder="Paste your Stallion Express API Token here"
+                  value={stallionToken}
+                  onChange={(e) => handleSaveStallionToken(e.target.value.trim())}
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  Your token requires the <code className="bg-muted px-1 rounded font-mono">shipments:read</code> scope.
+                </p>
+              </div>
+
+              <Button
+                variant="outline"
+                onClick={handleTestStallionConnection}
+                disabled={isTestingStallion || !stallionToken.trim()}
+                className="border-blue-300 text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/30"
+              >
+                {isTestingStallion ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Testing Connection...
+                  </>
+                ) : (
+                  <>
+                    <Truck className="mr-2 h-4 w-4 text-blue-600" /> Test Connection
+                  </>
+                )}
+              </Button>
             </CardContent>
           </Card>
         </div>

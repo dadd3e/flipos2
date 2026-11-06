@@ -100,6 +100,18 @@ export type Sale = {
   itemImageUrl?: string;
   isEtsyImport?: boolean;
   needsShippingCostEntry?: boolean;
+
+  // Stallion Express shipping fields
+  stallionOrderId?: string;
+  stallionShipmentId?: string;
+  stallionShipCode?: string;
+  stallionTrackingNumber?: string;
+  stallionShippingCost?: number;
+};
+
+export type StallionConfig = {
+  token: string;
+  lastShippingSync?: string;
 };
 
 export type EtsyConfig = {

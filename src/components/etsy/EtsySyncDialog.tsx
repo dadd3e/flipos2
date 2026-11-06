@@ -17,11 +17,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   Store, KeyRound, Download, RefreshCw, CheckCircle2, AlertTriangle, 
-  ExternalLink, Package, ShoppingCart, Loader2, LogIn, Copy, Check, Search
+  ExternalLink, Package, ShoppingCart, Loader2, LogIn, Copy, Check, Search, Truck
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { EtsyConfig, InventoryItem, Sale } from "@/lib/types";
-import { RESELLER_ETSY_CONFIG_KEY, RESELLER_INVENTORY_KEY, RESELLER_SALES_KEY } from "@/lib/constants";
+import { RESELLER_ETSY_CONFIG_KEY, RESELLER_INVENTORY_KEY, RESELLER_SALES_KEY, RESELLER_STALLION_CONFIG_KEY } from "@/lib/constants";
 import { reconcileInventoryAndSales } from "@/lib/inventorySalesSync";
 import { cleanQuotes } from "@/lib/utils";
 
@@ -56,6 +56,7 @@ export function EtsySyncDialog({
   const [isFindingShop, setIsFindingShop] = useState(false);
   const [isSyncingInventory, setIsSyncingInventory] = useState(false);
   const [isSyncingSales, setIsSyncingSales] = useState(false);
+  const [isSyncingStallion, setIsSyncingStallion] = useState(false);
   const [copiedCallback, setCopiedCallback] = useState(false);
 
   const [redirectUri, setRedirectUri] = useState("");
@@ -694,6 +695,217 @@ export function EtsySyncDialog({
     }
   };
 
+  const handleSyncStallionShipping = async () => {
+    const stallionConfigRaw = localStorage.getItem(RESELLER_STALLION_CONFIG_KEY);
+    let token = "";
+    if (stallionConfigRaw) {
+      try {
+        const parsed = JSON.parse(stallionConfigRaw);
+        token = parsed.token || "";
+      } catch {}
+    }
+
+    if (!token.trim()) {
+      toast({
+        title: "Stallion Express Token Required",
+        description: "Please enter your Stallion Express API Token under Settings > Etsy Integration.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSyncingStallion(true);
+    try {
+      const currentStoredSales = localStorage.getItem(RESELLER_SALES_KEY);
+      const sales: Sale[] = currentStoredSales ? JSON.parse(currentStoredSales) : [];
+
+      const etsySales = sales.filter((s) => s.soldVia === "Etsy" && s.etsyReceiptId !== undefined && s.etsyReceiptId !== null);
+
+      if (etsySales.length === 0) {
+        toast({
+          title: "No Etsy Sales Found",
+          description: "There are no Etsy sales receipts imported yet to sync shipping for.",
+        });
+        setIsSyncingStallion(false);
+        return;
+      }
+
+      const etsyReceiptIds = etsySales.map((s) => s.etsyReceiptId);
+
+      let oldestSaleDate: Date | null = null;
+      for (const sale of etsySales) {
+        if (!sale.stallionShipmentId && sale.saleDate) {
+          const d = new Date(sale.saleDate);
+          if (!isNaN(d.getTime())) {
+            if (!oldestSaleDate || d.getTime() < oldestSaleDate.getTime()) {
+              oldestSaleDate = d;
+            }
+          }
+        }
+      }
+
+      const createdAfter = oldestSaleDate
+        ? new Date(oldestSaleDate.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString()
+        : new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
+
+      const res = await fetch("/api/stallion/shipments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: token.trim(), etsyReceiptIds, createdAfter }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to fetch Stallion shipments.");
+      }
+
+      const matches: {
+        receiptId: string | number;
+        shipmentId: string;
+        shipCode: string;
+        orderId: string;
+        trackingNumber: string;
+        service: string;
+        totalPaid: number;
+      }[] = data.matches || [];
+
+      const stats = data.stats || {};
+
+      if (stats.shipmentsFetched > 0 && matches.length === 0) {
+        const samples = stats.sampleShipmentOrderIds && stats.sampleShipmentOrderIds.length > 0
+          ? stats.sampleShipmentOrderIds.join(", ")
+          : "None";
+
+        toast({
+          title: "No Stallion Matches Found",
+          description: `Fetched ${stats.shipmentsFetched} shipments, but 0 matched your Etsy sales. Sample Stallion order_ids: ${samples}`,
+          duration: 10000,
+        });
+        setIsSyncingStallion(false);
+        return;
+      }
+
+      if (matches.length === 0) {
+        toast({
+          title: "No Shipments Found",
+          description: "No paid Stallion shipments were found.",
+        });
+        setIsSyncingStallion(false);
+        return;
+      }
+
+      const normalizeId = (val: any) => String(val || "").trim().replace(/^#/, "");
+      const matchMap = new Map<string, typeof matches[0]>();
+      for (const m of matches) {
+        matchMap.set(normalizeId(m.receiptId), m);
+      }
+
+      let updatedSalesCount = 0;
+      const matchedReceiptIdsSet = new Set<string>();
+
+      const receiptSalesMap = new Map<string, Sale[]>();
+      for (const s of sales) {
+        if (s.soldVia === "Etsy" && s.etsyReceiptId !== undefined && s.etsyReceiptId !== null) {
+          const normKey = normalizeId(s.etsyReceiptId);
+          if (!receiptSalesMap.has(normKey)) {
+            receiptSalesMap.set(normKey, []);
+          }
+          receiptSalesMap.get(normKey)!.push(s);
+        }
+      }
+
+      const updatedSalesList = sales.map((sale) => {
+        if (sale.soldVia !== "Etsy" || sale.etsyReceiptId === undefined || sale.etsyReceiptId === null) {
+          return sale;
+        }
+
+        const normKey = normalizeId(sale.etsyReceiptId);
+        const match = matchMap.get(normKey);
+        if (!match) {
+          return sale;
+        }
+
+        matchedReceiptIdsSet.add(normKey);
+
+        if (sale.actualShippingCostBySeller > 0 && !sale.stallionShipmentId) {
+          return sale;
+        }
+
+        const group = receiptSalesMap.get(normKey) || [sale];
+        const totalPaid = match.totalPaid;
+
+        let partCost = totalPaid;
+        if (group.length > 1) {
+          const groupTotalPrice = group.reduce((sum, item) => sum + (item.grossSaleAmount || item.etsySalePrice || 0), 0);
+          const salePrice = sale.grossSaleAmount || sale.etsySalePrice || 0;
+
+          if (groupTotalPrice > 0) {
+            const isFirst = group[0].id === sale.id;
+            if (isFirst) {
+              let otherSum = 0;
+              for (let i = 1; i < group.length; i++) {
+                const item = group[i];
+                const itemPrice = item.grossSaleAmount || item.etsySalePrice || 0;
+                const itemPart = Math.floor((itemPrice / groupTotalPrice) * totalPaid * 100) / 100;
+                otherSum += itemPart;
+              }
+              partCost = parseFloat((totalPaid - otherSum).toFixed(2));
+            } else {
+              partCost = Math.floor((salePrice / groupTotalPrice) * totalPaid * 100) / 100;
+            }
+          } else {
+            partCost = parseFloat((totalPaid / group.length).toFixed(2));
+          }
+        }
+
+        updatedSalesCount++;
+
+        const cogs = (sale.totalPurchaseCostOfItemSold || 0) * (sale.quantitySold || 1);
+        const fees = sale.totalPlatformFeesAndDiscounts || 0;
+        const gross = sale.grossSaleAmount || 0;
+        const newProfit = parseFloat((gross - fees - partCost - cogs).toFixed(2));
+
+        return {
+          ...sale,
+          actualShippingCostBySeller: partCost,
+          stallionShippingCost: partCost,
+          stallionOrderId: match.orderId,
+          stallionShipmentId: match.shipmentId,
+          stallionShipCode: match.shipCode,
+          stallionTrackingNumber: match.trackingNumber,
+          needsShippingCostEntry: false,
+          profit: newProfit,
+        };
+      });
+
+      localStorage.setItem(RESELLER_SALES_KEY, JSON.stringify(updatedSalesList));
+      window.dispatchEvent(
+        new StorageEvent("storage", {
+          key: RESELLER_SALES_KEY,
+          newValue: JSON.stringify(updatedSalesList),
+          storageArea: localStorage,
+        })
+      );
+
+      const noMatchCount = etsySales.filter((s) => !matchedReceiptIdsSet.has(normalizeId(s.etsyReceiptId))).length;
+
+      toast({
+        title: "Stallion Shipping Synced!",
+        description: `Applied shipping to ${updatedSalesCount} sales. ${noMatchCount} had no matching Stallion shipment.`,
+      });
+
+      if (onSyncComplete) onSyncComplete();
+    } catch (err: any) {
+      toast({
+        title: "Stallion Sync Failed",
+        description: err.message || "Failed to sync Stallion Express shipping data.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSyncingStallion(false);
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
@@ -801,21 +1013,40 @@ export function EtsySyncDialog({
                   )}
                 </div>
 
-                <Button
-                  onClick={handleSyncSales}
-                  disabled={isSyncingSales || !keystring || !shopId || !accessToken}
-                  className="w-full bg-orange-600 hover:bg-orange-700 text-white"
-                >
-                  {isSyncingSales ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Fetching Orders from Etsy...
-                    </>
-                  ) : (
-                    <>
-                      <RefreshCw className="mr-2 h-4 w-4" /> Sync Sales Receipts from Etsy
-                    </>
-                  )}
-                </Button>
+                <div className="flex flex-col sm:flex-row gap-2.5">
+                  <Button
+                    onClick={handleSyncSales}
+                    disabled={isSyncingSales || isSyncingStallion || !keystring || !shopId || !accessToken}
+                    className="flex-1 bg-orange-600 hover:bg-orange-700 text-white"
+                  >
+                    {isSyncingSales ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Fetching Orders...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="mr-2 h-4 w-4" /> Sync Sales Receipts from Etsy
+                      </>
+                    )}
+                  </Button>
+
+                  <Button
+                    onClick={handleSyncStallionShipping}
+                    disabled={isSyncingSales || isSyncingStallion}
+                    variant="outline"
+                    className="flex-1 border-blue-300 text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/30"
+                  >
+                    {isSyncingStallion ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Syncing Stallion...
+                      </>
+                    ) : (
+                      <>
+                        <Truck className="mr-2 h-4 w-4 text-blue-600" /> Sync Stallion Shipping
+                      </>
+                    )}
+                  </Button>
+                </div>
 
                 {!accessToken && (
                   <p className="text-xs text-amber-600 flex items-center gap-1">

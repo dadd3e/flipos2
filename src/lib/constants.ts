@@ -192,6 +192,7 @@ export const RESELLER_PROFILE_EMAIL_KEY = 'resellerProfileEmail';
 export const DEFAULT_BUSINESS_NAME = 'My Reselling Co.';
 export const DEFAULT_EMAIL = 'user@example.com';
 export const RESELLER_ETSY_CONFIG_KEY = 'resellerEtsyConfig';
+export const RESELLER_STALLION_CONFIG_KEY = 'resellerStallionConfig';
 
 // Auction Assist Constants
 export const RESELLER_AUCTION_EVENTS_KEY = 'resellerAuctionEvents';
