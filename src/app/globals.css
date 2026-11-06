@@ -1,0 +1,291 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --warning: 38 91.6% 52.5%; /* Based on orange-500 */
+    --warning-foreground: 48 95.5% 95.3%; /* Light text for warning */
+    
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --input-form-field-background: 0 0% 100%; /* Default to white for inputs/selects */
+    --ring: 222.2 84% 4.9%;
+
+    --radius: 0.75rem; /* Retaining the larger radius from previous custom theme */
+
+    /* Chart colors - generic default */
+    --chart-1: hsl(var(--primary));
+    --chart-2: hsl(var(--destructive));
+    --chart-3: hsl(var(--secondary-foreground)); 
+    --chart-4: hsl(var(--muted-foreground));
+    --chart-5: 180 50% 50%;      /* A generic teal/cyan */
+
+    /* Inventory Aging Chart Gradient Steps (Light Theme: Primary is dark blue 222.2 47.4% 11.2%) */
+    --chart-age-step-1: hsl(222, 47%, 85%); /* Lightest */
+    --chart-age-step-2: hsl(222, 47%, 70%);
+    --chart-age-step-3: hsl(222, 47%, 55%);
+    --chart-age-step-4: hsl(222, 47%, 40%);
+    --chart-age-step-5: hsl(222, 47%, 25%);
+    --chart-age-step-6: hsl(222, 47%, 11.2%); /* Most prominent (matches primary) */
+
+
+    /* Sidebar variables - derived from neutral */
+    --sidebar-background: 0 0% 98%; /* Slightly off-white */
+    --sidebar-foreground: 222.2 84% 4.9%;
+    --sidebar-primary: 222.2 47.4% 11.2%;
+    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-accent: 210 40% 96.1%;
+    --sidebar-accent-foreground: 222.2 47.4% 11.2%;
+    --sidebar-border: 214.3 31.8% 91.4%;
+    --sidebar-ring: 222.2 84% 4.9%;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    
+    --warning: 38 91.6% 52.5%;
+    --warning-foreground: 48 95.5% 95.3%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --input-form-field-background: 222.2 84% 4.9%; /* Dark background for inputs/selects in dark mode */
+    --ring: 212.7 26.8% 83.9%;
+
+    --radius: 0.75rem; /* Retaining the larger radius */
+
+    /* Chart colors - generic dark default */
+    --chart-1: hsl(var(--primary));      
+    --chart-2: hsl(var(--destructive));   
+    --chart-3: hsl(var(--secondary-foreground)); 
+    --chart-4: hsl(var(--muted-foreground));  
+    --chart-5: 180 50% 70%;      /* A lighter generic teal/cyan */
+    
+    /* Inventory Aging Chart Gradient Steps (Dark Theme: Primary is light 210 40% 98%) */
+    /* Prominent is lighter/more saturated */
+    --chart-age-step-1: hsl(210, 40%, 30%); /* Darkest/least prominent */
+    --chart-age-step-2: hsl(210, 40%, 45%);
+    --chart-age-step-3: hsl(210, 40%, 60%);
+    --chart-age-step-4: hsl(210, 40%, 75%);
+    --chart-age-step-5: hsl(210, 40%, 90%);
+    --chart-age-step-6: hsl(210, 40%, 98%); /* Most prominent (matches primary) */
+
+    /* Sidebar variables - derived from neutral dark */
+    --sidebar-background: 222.2 84% 6.9%; /* Slightly lighter than main dark bg */
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 210 40% 98%;
+    --sidebar-primary-foreground: 222.2 47.4% 11.2%;
+    --sidebar-accent: 217.2 32.6% 17.5%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 217.2 32.6% 17.5%;
+    --sidebar-ring: 212.7 26.8% 83.9%;
+  }
+  
+  .retro {
+    --background: 41 82% 82%; /* #F6DCAC Pale Yellow/Beige */
+    --foreground: 217 97% 15%; /* #01204E Dark Blue */
+    --card: 40 83% 98%; /* #FEFBF6 Light Cream */
+    --card-foreground: 217 97% 15%; /* #01204E Dark Blue */
+    --popover: 40 83% 98%; /* #FEFBF6 Light Cream */
+    --popover-foreground: 217 97% 15%; /* #01204E Dark Blue */
+    --primary: 186 97% 29%; /* #028391 Teal */
+    --primary-foreground: 0 0% 100%; /* White */
+    --secondary: 27 93% 70%; /* #FAA968 Peach */
+    --secondary-foreground: 217 97% 15%; /* #01204E Dark Blue */
+    --muted: 41 75% 90%; /* Lighter Pale Yellow/Beige */
+    --muted-foreground: 217 80% 30%; /* Softer Dark Blue */
+    --accent: 16 94% 56%; /* #F85525 Orange-Red */
+    --accent-foreground: 0 0% 100%; /* White */
+    --destructive: 16 94% 56%; /* #F85525 Orange-Red */
+    --destructive-foreground: 0 0% 100%; /* White */
+    --warning: 27 93% 70%; /* #FAA968 Peach */
+    --warning-foreground: 217 97% 15%; /* #01204E Dark Blue */
+    --border: 41 70% 75%; /* Darker Pale Yellow/Beige */
+    --input: 41 70% 75%; /* Darker Pale Yellow/Beige - For Input Borders */
+    --input-form-field-background: 40 83% 98%; /* Light Cream for inputs/selects in retro */
+    --ring: 186 97% 29%; /* #028391 Teal */
+    --radius: 0.75rem; /* Consistent radius */
+
+    --chart-1: 186 97% 29%; /* Teal #028391 */
+    --chart-2: 16 94% 56%; /* Orange-Red #F85525 */
+    --chart-3: 27 93% 70%; /* Peach #FAA968 */
+    --chart-4: 217 97% 15%; /* Dark Blue #01204E */
+    --chart-5: 186 70% 45%; /* Lighter/Desaturated Teal */
+
+    /* Inventory Aging Chart Gradient Steps (Retro Theme: Primary is Teal 186 97% 29%) */
+    --chart-age-step-1: hsl(186, 97%, 80%); /* Lightest Teal */
+    --chart-age-step-2: hsl(186, 97%, 65%);
+    --chart-age-step-3: hsl(186, 97%, 50%);
+    --chart-age-step-4: hsl(186, 97%, 40%);
+    --chart-age-step-5: hsl(186, 97%, 34%);
+    --chart-age-step-6: hsl(186, 97%, 29%); /* Most prominent (matches primary) */
+
+    --sidebar-background: hsl(var(--card));
+    --sidebar-foreground: hsl(var(--card-foreground));
+    --sidebar-primary: hsl(var(--primary));
+    --sidebar-primary-foreground: hsl(var(--primary-foreground));
+    --sidebar-accent: hsl(var(--accent));
+    --sidebar-accent-foreground: hsl(var(--accent-foreground));
+    --sidebar-border: hsl(var(--border));
+    --sidebar-ring: hsl(var(--ring));
+  }
+
+  .throwback {
+    --background: 36 33% 84%; /* #E7DCC9 */
+    --foreground: 176 70% 25%; /* #126D68 */
+    --card: 30 14% 93%; /* #f0ede9 */
+    --card-foreground: 176 70% 25%; /* #126D68 */
+    --popover: 30 14% 93%; /* #f0ede9 - making popovers consistent with cards */
+    --popover-foreground: 176 70% 25%; /* #126D68 */
+    --primary: 24 94% 55%; /* #F87523 */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 45 100% 55%; /* #FFC31B */
+    --secondary-foreground: 176 70% 25%; /* Dark Teal for contrast on Yellow */
+    --muted: 36 33% 90%; /* Lighter beige */
+    --muted-foreground: 176 70% 35%; /* Slightly lighter Dark Teal */
+    --accent: 181 73% 42%; /* #1DB7B9 */
+    --accent-foreground: 0 0% 100%;
+    --destructive: 358 83% 38%; /* #B11016 */
+    --destructive-foreground: 0 0% 100%;
+    --warning: 24 94% 55%; /* Orange, same as primary: #F87523 */
+    --warning-foreground: 0 0% 100%;
+    --border: 36 33% 75%; /* Darker beige for borders */
+    --input: 36 33% 75%; /* Darker beige - For Input Borders */
+    --input-form-field-background: 0 0% 100%; /* White - For Input/Select Backgrounds */
+    --ring: 181 73% 42%; /* Teal/Cyan, same as accent */
+    --radius: 0.75rem;
+
+    --chart-1: hsl(var(--primary)); /* Orange #F87523 */
+    --chart-2: hsl(var(--accent)); /* Teal/Cyan #1DB7B9 */
+    --chart-3: hsl(var(--secondary)); /* Yellow #FFC31B */
+    --chart-4: hsl(var(--foreground)); /* Dark Teal #126D68 */
+    --chart-5: 181 73% 60%; /* Lighter Teal/Cyan */
+    
+    /* Inventory Aging Chart Gradient Steps (Throwback Theme: Primary is Orange 24 94% 55%) */
+    --chart-age-step-1: hsl(24, 94%, 85%); /* Lightest Orange */
+    --chart-age-step-2: hsl(24, 94%, 75%);
+    --chart-age-step-3: hsl(24, 94%, 65%);
+    --chart-age-step-4: hsl(24, 94%, 60%);
+    --chart-age-step-5: hsl(24, 94%, 58%);
+    --chart-age-step-6: hsl(24, 94%, 55%); /* Most prominent (matches primary) */
+
+    --sidebar-background: 36 33% 80%; /* Slightly darker than main bg for sidebar */
+    --sidebar-foreground: hsl(var(--foreground));
+    --sidebar-primary: hsl(var(--primary));
+    --sidebar-primary-foreground: hsl(var(--primary-foreground));
+    --sidebar-accent: hsl(var(--accent));
+    --sidebar-accent-foreground: hsl(var(--accent-foreground));
+    --sidebar-border: 36 33% 70%; /* Darker border for sidebar */
+    --sidebar-ring: hsl(var(--ring));
+  }
+
+  .lavender {
+    --background: 255 60% 95%; /* Main background - very light lavender */
+    --foreground: 250 30% 17%; /* Dark purple/indigo for text */
+    --card: 255 50% 99%; /* Cards - almost white, slight lavender tint */
+    --card-foreground: 250 30% 17%;
+    --popover: 255 50% 99%;
+    --popover-foreground: 250 30% 17%;
+    --primary: 260 65% 60%; /* Main interactive elements - medium lavender */
+    --primary-foreground: 260 50% 98%; /* Text on primary - very light lavender/white */
+    --secondary: 255 60% 90%; /* Secondary elements - light lavender */
+    --secondary-foreground: 260 50% 40%; /* Text on secondary - darker lavender */
+    --muted: 255 60% 97%; /* Muted backgrounds - very light, almost off-white lavender */
+    --muted-foreground: 255 30% 55%; /* Muted text - medium-gray lavender */
+    --accent: 260 70% 65%; /* Accent color - slightly brighter/more saturated lavender */
+    --accent-foreground: 260 50% 98%;
+    --destructive: 0 70% 60%; /* Standard destructive red */
+    --destructive-foreground: 0 0% 100%;
+    --warning: 38 92% 50%; /* Standard warning orange */
+    --warning-foreground: 48 96% 95%;
+    --border: 255 50% 90%; /* Borders - light lavender */
+    --input: 255 50% 90%; /* Input borders */
+    --input-form-field-background: 255 50% 99%; /* Input background - same as cards */
+    --ring: 260 65% 70%; /* Focus ring - related to primary */
+    --radius: 0.75rem;
+
+    /* Chart colors for Lavender theme */
+    --chart-1: hsl(var(--primary));
+    --chart-2: hsl(275 60% 70%); /* A slightly different purple */
+    --chart-3: hsl(300 55% 65%); /* A magenta-ish purple */
+    --chart-4: hsl(240 50% 60%); /* A more bluish purple */
+    --chart-5: hsl(260 40% 80%); /* A very light, desaturated lavender for fill/accents */
+
+    /* Inventory Aging Chart Gradient Steps for Lavender */
+    --chart-age-step-1: hsl(260, 65%, 95%); /* Very light (almost white) lavender */
+    --chart-age-step-2: hsl(260, 65%, 85%);
+    --chart-age-step-3: hsl(260, 65%, 75%);
+    --chart-age-step-4: hsl(260, 65%, 65%);
+    --chart-age-step-5: hsl(260, 65%, 55%);
+    --chart-age-step-6: hsl(var(--primary)); /* Most prominent (matches primary) */
+
+    /* Sidebar variables for Lavender theme - LIGHTENED */
+    --sidebar-background: 255 60% 92%; /* Lightened sidebar background */
+    --sidebar-foreground: 250 30% 25%; /* Slightly darker text for contrast */
+    --sidebar-primary: hsl(var(--primary)); /* Active item - same as main primary */
+    --sidebar-primary-foreground: hsl(var(--primary-foreground)); /* Text on active item */
+    --sidebar-accent: 255 60% 85%; /* Hover/accent - lighter than sidebar bg but still lavender */
+    --sidebar-accent-foreground: 260 50% 35%; /* Text on hover/accent */
+    --sidebar-border: 255 50% 88%; /* Border - slightly darker than new sidebar bg */
+    --sidebar-ring: hsl(var(--ring));
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: '"Plus Jakarta Sans"', sans-serif;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
